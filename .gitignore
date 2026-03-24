@@ -1,0 +1,25 @@
+# Excel data files (sensitive input/output data)
+*.xlsx
+*.xls
+*.xlsm
+
+# Text reports (generated output)
+*.txt
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# macOS
+.DS_Store
+
+# Claude / IDE config
+.claude/
+.agents/
+.continue/
+skills-lock.json
+
+# Query Comparison folder (all input/output data)
+Query Comparison/
