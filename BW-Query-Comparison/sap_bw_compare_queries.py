@@ -21,9 +21,63 @@ UNNAMED_CONTAINERS = {
 
 # ── Parsing ────────────────────────────────────────────────────────────────
 
+def has_nodekey_columns(ws):
+    """True for exports with Nodekey / Parent / Definition in columns S–U."""
+    if ws.max_column < 21:
+        return False
+    return any(ws.cell(row=r, column=19).value == 'Nodekey' for r in range(1, 4))
+
+
+def parse_indented(ws):
+    """Build the node dict from an export without Nodekey columns.
+
+    Newer exports drop columns S–U and move the technical value to column P.
+    The tree is implied by indentation instead: a row's definition is the
+    label in its leftmost non-empty column A–N, and its parent is the nearest
+    earlier row labelled further to the left. Must run on the raw export —
+    a filled-down sheet has lost that indentation.
+    """
+    nodes = {}
+    stack = []   # (depth, nodekey) of the current ancestor chain
+
+    for row_idx, row in enumerate(ws.iter_rows(min_row=4, values_only=True), 4):
+        depth = defn = None
+        for col, v in enumerate(row[:14]):
+            if v is not None and str(v).strip():
+                depth, defn = col, str(v).strip()
+                break
+        if defn is None:
+            continue
+
+        while stack and stack[-1][0] >= depth:
+            stack.pop()
+
+        desc  = row[14] if len(row) > 14 else None   # Column O – Description
+        value = row[15] if len(row) > 15 else None   # Column P – Technical value
+        nk = str(row_idx)
+
+        nodes[nk] = {
+            'parent':      stack[-1][1] if stack else '',
+            'definition':  defn,
+            'description': str(desc).strip()  if desc  is not None else '',
+            'value':       str(value).strip() if value is not None else '',
+            'children':    [],
+        }
+        stack.append((depth, nk))
+
+    for nk, node in nodes.items():
+        p = node['parent']
+        if p and p in nodes:
+            nodes[p]['children'].append(nk)
+
+    return nodes
+
+
 def parse_excel(filepath):
     wb = openpyxl.load_workbook(filepath, data_only=True)
     ws = wb.active
+    if not has_nodekey_columns(ws):
+        return parse_indented(ws)
     nodes = {}
 
     for row in ws.iter_rows(values_only=True):

@@ -22,6 +22,8 @@ import difflib
 import openpyxl
 from pathlib import Path
 
+from sap_bw_compare_queries import has_nodekey_columns, parse_indented
+
 # ── Constants ────────────────────────────────────────────────────────────────
 
 HIER_COLS      = list(range(1, 15))   # openpyxl 1-based: columns A–N
@@ -112,6 +114,8 @@ def load_and_parse(filepath):
     """Load workbook, apply fill-down in-memory, return node tree."""
     wb = openpyxl.load_workbook(filepath, data_only=True)
     ws = wb.active
+    if not has_nodekey_columns(ws):
+        return parse_indented(ws)   # needs the raw indentation, so no fill-down
     fill_down_hierarchy(ws)
     return parse_worksheet(ws)
 
