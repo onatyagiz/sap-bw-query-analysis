@@ -102,3 +102,5 @@ Standard SAP BW query definition Excel export (`G_*.xlsx`). The scripts expect:
 | U (21) | Definition type (Query, Filter, Restricted KF, Calculated KF, Formula, …) |
 
 Rows 1–3 are treated as headers; data starts at row 4.
+
+Newer exports omit columns S–U and put the technical value in column P. For those, the tree is rebuilt from indentation (a row's parent is the nearest earlier row labelled further left), so pass the raw export — not a `_replica` — since fill-down removes the indentation.
